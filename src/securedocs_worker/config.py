@@ -12,6 +12,9 @@ class RedisSettings(BaseModel):
 class RabbitMqSettings(BaseModel):
     url: str
     submitted_queue: str = "securedocs.document-submitted"
+    submitted_exchange: str = (
+        "SecureDocs.Application.Documents.IntegrationEvents:DocumentSubmittedIntegrationEvent"
+    )
     processed_exchange: str = (
         "SecureDocs.Application.Documents.IntegrationEvents:DocumentProcessedIntegrationEvent"
     )
