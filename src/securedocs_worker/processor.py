@@ -1,8 +1,8 @@
 import json
-import logging
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
+import structlog
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey
 
 from securedocs_worker import crypto
@@ -14,7 +14,7 @@ from securedocs_worker.events import (
 from securedocs_worker.rabbitmq import MassTransitPublisher
 from securedocs_worker.redis_store import RedisPayloadStore, SubmissionPayload
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger().bind(logger=__name__)
 
 ALGORITHM = "AES-256-GCM"
 KDF_ALGORITHM = "scrypt"
@@ -53,21 +53,21 @@ class DocumentProcessor:
 
         submission = self._redis.fetch(document_id)
         if submission is None:
-            logger.warning("payload not available document_id=%s", document_id)
+            logger.warning("payload not available", document_id=str(document_id))
             self._publish_failed(document_id, "payload not available", correlation_id)
             return
 
         try:
             processed = self._encrypt_and_sign(document_id, submission)
         except Exception:
-            logger.exception("processing error document_id=%s", document_id)
+            logger.exception("processing error", document_id=str(document_id))
             self._publish_failed(document_id, "processing error", correlation_id)
             self._redis.delete(document_id)
             return
 
         self._publisher.publish(processed, correlation_id)
         self._redis.delete(document_id)
-        logger.info("document processed document_id=%s", document_id)
+        logger.info("document processed", document_id=str(document_id))
 
     def _encrypt_and_sign(
         self,

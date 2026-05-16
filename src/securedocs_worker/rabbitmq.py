@@ -1,15 +1,15 @@
 import json
-import logging
 from collections.abc import Callable
 from datetime import datetime, timezone
 from uuid import uuid4
 
 import pika
+import structlog
 from pika.adapters.blocking_connection import BlockingChannel
 
 from securedocs_worker.events import DocumentProcessedEvent, DocumentSubmittedEvent
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger().bind(logger=__name__)
 
 MASSTRANSIT_CONTENT_TYPE = "application/vnd.masstransit+json"
 
@@ -49,7 +49,7 @@ class MassTransitConsumer:
             on_message_callback=self._make_callback(on_message),
         )
 
-        logger.info("worker consuming from queue=%s exchange=%s", self._queue, self._exchange)
+        logger.info("worker consuming", queue=self._queue, exchange=self._exchange)
         self._channel.start_consuming()
 
     def stop(self) -> None:
@@ -69,11 +69,14 @@ class MassTransitConsumer:
         ) -> None:
             try:
                 event, correlation_id = parse_envelope(body)
+                structlog.contextvars.bind_contextvars(correlation_id=correlation_id)
                 on_message(event, correlation_id)
                 ch.basic_ack(delivery_tag=method.delivery_tag)
             except Exception:
                 logger.exception("failed to process message; nacking without requeue")
                 ch.basic_nack(delivery_tag=method.delivery_tag, requeue=False)
+            finally:
+                structlog.contextvars.clear_contextvars()
 
         return callback
 

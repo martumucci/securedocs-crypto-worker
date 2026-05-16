@@ -26,6 +26,12 @@ class KeySettings(BaseModel):
     public_key_path: Path = Path("./keys/ed25519.public")
 
 
+class CryptoSettings(BaseModel):
+    scrypt_n: int = 16384
+    scrypt_r: int = 8
+    scrypt_p: int = 1
+
+
 class HealthcheckSettings(BaseModel):
     port: int = 8080
 
@@ -41,4 +47,5 @@ class Settings(BaseSettings):
     redis: RedisSettings
     rabbitmq: RabbitMqSettings
     keys: KeySettings = Field(default_factory=KeySettings)
+    crypto: CryptoSettings = Field(default_factory=CryptoSettings)
     healthcheck: HealthcheckSettings = Field(default_factory=HealthcheckSettings)
