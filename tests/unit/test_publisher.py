@@ -1,8 +1,12 @@
 from datetime import datetime, timezone
+from unittest.mock import MagicMock
 from uuid import UUID
 
+import pika
+import pytest
+
 from securedocs_worker.events import DocumentProcessedEvent, DocumentStatus
-from securedocs_worker.rabbitmq import build_envelope
+from securedocs_worker.rabbitmq import MassTransitPublisher, build_envelope
 
 EXCHANGE = "SecureDocs.Application.Documents.IntegrationEvents:DocumentProcessedIntegrationEvent"
 
@@ -84,3 +88,45 @@ def test_envelope_round_trips_failed_event() -> None:
     assert message["status"] == "Failed"
     assert message["errorReason"] == "payload not available"
     assert message["ciphertext"] is None
+
+
+def test_publish_reconnects_and_retries_once_after_connection_loss() -> None:
+    publisher = MassTransitPublisher("amqp://unused", EXCHANGE)
+
+    dead_channel = MagicMock()
+    dead_channel.basic_publish.side_effect = pika.exceptions.ChannelWrongStateError(
+        "Channel is closed."
+    )
+    fresh_channel = MagicMock()
+
+    publisher._channel = dead_channel
+
+    def fake_connect() -> None:
+        publisher._channel = fresh_channel
+        publisher._connection = MagicMock(is_open=True)
+
+    publisher.connect = fake_connect  # type: ignore[method-assign]
+
+    publisher.publish(_success_event())
+
+    dead_channel.basic_publish.assert_called_once()
+    fresh_channel.basic_publish.assert_called_once()
+
+
+def test_publish_propagates_error_if_reconnect_also_fails() -> None:
+    publisher = MassTransitPublisher("amqp://unused", EXCHANGE)
+
+    broken_channel = MagicMock()
+    broken_channel.basic_publish.side_effect = pika.exceptions.ChannelWrongStateError(
+        "Channel is closed."
+    )
+    publisher._channel = broken_channel
+
+    def fake_connect() -> None:
+        publisher._channel = broken_channel
+        publisher._connection = MagicMock(is_open=True)
+
+    publisher.connect = fake_connect  # type: ignore[method-assign]
+
+    with pytest.raises(pika.exceptions.AMQPError):
+        publisher.publish(_success_event())

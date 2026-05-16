@@ -6,7 +6,9 @@ requires-python = ">=3.12"
 dependencies = [
     "pika>=1.3.2",
     "redis>=5.0.8",
-    "cryptography>=43.0.1",
+    # Capped <47: the 47+ aarch64 wheel SIGILLs under Docker Desktop on
+    # Apple Silicon. Do not raise without re-verifying in the container.
+    "cryptography>=43.0.1,<47",
     "pydantic>=2.9.2",
     "pydantic-settings>=2.5.2",
     "structlog>=24.4.0",

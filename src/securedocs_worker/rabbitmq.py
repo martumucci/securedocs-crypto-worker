@@ -127,6 +127,17 @@ class MassTransitPublisher:
         )
 
     def publish(self, event: DocumentProcessedEvent, correlation_id: str | None = None) -> None:
+        # The publisher connection sits idle between messages and is not serviced
+        # while the consumer blocks, so the broker eventually drops it. Reconnect
+        # and retry once on any AMQP failure.
+        try:
+            self._publish(event, correlation_id)
+        except pika.exceptions.AMQPError:
+            logger.warning("publisher connection lost; reconnecting")
+            self._reconnect()
+            self._publish(event, correlation_id)
+
+    def _publish(self, event: DocumentProcessedEvent, correlation_id: str | None) -> None:
         if self._channel is None:
             raise RuntimeError("Publisher not connected. Call connect() first.")
 
@@ -145,6 +156,14 @@ class MassTransitPublisher:
             body=body,
             properties=properties,
         )
+
+    def _reconnect(self) -> None:
+        try:
+            if self._connection is not None and self._connection.is_open:
+                self._connection.close()
+        except pika.exceptions.AMQPError:
+            pass
+        self.connect()
 
     def close(self) -> None:
         if self._connection is not None and self._connection.is_open:
