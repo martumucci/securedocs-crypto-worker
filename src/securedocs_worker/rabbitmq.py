@@ -53,6 +53,11 @@ class MassTransitConsumer:
         self._channel.start_consuming()
 
     def stop(self) -> None:
+        connection = self._connection
+        if connection is not None and connection.is_open:
+            connection.add_callback_threadsafe(self._shutdown)
+
+    def _shutdown(self) -> None:
         if self._channel is not None and self._channel.is_open:
             self._channel.stop_consuming()
         if self._connection is not None and self._connection.is_open:
