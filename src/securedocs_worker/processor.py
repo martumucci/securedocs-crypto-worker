@@ -1,5 +1,5 @@
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
 import structlog
@@ -26,7 +26,7 @@ def canonical_timestamp(dt: datetime) -> str:
     This format is part of the signing protocol: the verifier must reconstruct
     the exact same string to validate the Ed25519 signature.
     """
-    utc = dt.astimezone(timezone.utc)
+    utc = dt.astimezone(UTC)
     millis = utc.microsecond // 1000
     return utc.strftime("%Y-%m-%dT%H:%M:%S.") + f"{millis:03d}Z"
 
@@ -82,7 +82,7 @@ class DocumentProcessor:
         blob = crypto.encrypt_aes_gcm(key, plaintext, nonce)
         digest = crypto.compute_hash(plaintext)
 
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         processed_at = now.replace(microsecond=(now.microsecond // 1000) * 1000)
         signed_message = digest + canonical_timestamp(processed_at).encode("utf-8")
         signature = crypto.sign_ed25519(self._signing_key, signed_message)
@@ -123,6 +123,6 @@ class DocumentProcessor:
             document_id=document_id,
             status=DocumentStatus.Failed,
             error_reason=reason,
-            processed_at=datetime.now(timezone.utc),
+            processed_at=datetime.now(UTC),
         )
         self._publisher.publish(event, correlation_id)

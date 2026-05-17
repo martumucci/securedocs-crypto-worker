@@ -1,6 +1,6 @@
 import json
 from collections.abc import Callable
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 import pika
@@ -105,7 +105,7 @@ def build_envelope(
         "conversationId": str(uuid4()),
         "messageType": [f"urn:message:{exchange}"],
         "message": event.model_dump(by_alias=True, mode="json"),
-        "sentTime": datetime.now(timezone.utc).isoformat(),
+        "sentTime": datetime.now(UTC).isoformat(),
         "headers": {"X-Correlation-Id": correlation_id} if correlation_id else {},
     }
 

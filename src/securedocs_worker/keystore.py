@@ -19,9 +19,7 @@ def load_or_generate_signing_key(
 def _load_private_key(path: Path) -> Ed25519PrivateKey:
     key = serialization.load_pem_private_key(path.read_bytes(), password=None)
     if not isinstance(key, Ed25519PrivateKey):
-        raise TypeError(
-            f"Expected an Ed25519 private key at {path}, got {type(key).__name__}"
-        )
+        raise TypeError(f"Expected an Ed25519 private key at {path}, got {type(key).__name__}")
     return key
 
 

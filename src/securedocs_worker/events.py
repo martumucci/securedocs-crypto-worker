@@ -1,6 +1,6 @@
 from base64 import b64decode, b64encode
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 from typing import Annotated
 from uuid import UUID
 
@@ -34,7 +34,7 @@ class _CamelCaseModel(BaseModel):
     )
 
 
-class DocumentStatus(str, Enum):
+class DocumentStatus(StrEnum):
     Success = "Success"
     Failed = "Failed"
 

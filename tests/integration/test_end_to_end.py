@@ -156,9 +156,7 @@ def test_submitted_document_is_encrypted_signed_and_published(
 
     # Ciphertext decrypts with the key re-derived from passphrase + stored salt.
     key = crypto.derive_key(PASSPHRASE, event.salt, TEST_SCRYPT)
-    decryptor = Cipher(
-        algorithms.AES(key), modes.GCM(event.nonce, event.tag)
-    ).decryptor()
+    decryptor = Cipher(algorithms.AES(key), modes.GCM(event.nonce, event.tag)).decryptor()
     recovered = decryptor.update(event.ciphertext) + decryptor.finalize()
     assert recovered.decode("utf-8") == PLAINTEXT
 

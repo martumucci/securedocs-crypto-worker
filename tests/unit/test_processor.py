@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta, timezone
 from unittest.mock import Mock
 from uuid import UUID
 
@@ -23,7 +23,7 @@ def _submitted_event() -> DocumentSubmittedEvent:
     return DocumentSubmittedEvent(
         message_id=UUID("11111111-1111-1111-1111-111111111111"),
         document_id=DOCUMENT_ID,
-        submitted_at=datetime(2026, 5, 15, 12, 0, 0, tzinfo=timezone.utc),
+        submitted_at=datetime(2026, 5, 15, 12, 0, 0, tzinfo=UTC),
     )
 
 
@@ -42,12 +42,12 @@ def _make_processor() -> tuple[DocumentProcessor, Mock, Mock, Ed25519PrivateKey]
 
 class TestCanonicalTimestamp:
     def test_formats_with_millisecond_precision_and_z_suffix(self) -> None:
-        dt = datetime(2026, 5, 15, 12, 34, 56, 789000, tzinfo=timezone.utc)
+        dt = datetime(2026, 5, 15, 12, 34, 56, 789000, tzinfo=UTC)
 
         assert canonical_timestamp(dt) == "2026-05-15T12:34:56.789Z"
 
     def test_zero_microseconds_formats_as_000(self) -> None:
-        dt = datetime(2026, 5, 15, 12, 34, 56, 0, tzinfo=timezone.utc)
+        dt = datetime(2026, 5, 15, 12, 34, 56, 0, tzinfo=UTC)
 
         assert canonical_timestamp(dt) == "2026-05-15T12:34:56.000Z"
 
@@ -99,9 +99,7 @@ class TestProcessSuccess:
 
         event = publisher.publish.call_args[0][0]
         key = crypto.derive_key(PASSPHRASE, event.salt, TEST_SCRYPT)
-        decryptor = Cipher(
-            algorithms.AES(key), modes.GCM(event.nonce, event.tag)
-        ).decryptor()
+        decryptor = Cipher(algorithms.AES(key), modes.GCM(event.nonce, event.tag)).decryptor()
         recovered = decryptor.update(event.ciphertext) + decryptor.finalize()
 
         assert recovered.decode("utf-8") == PLAINTEXT

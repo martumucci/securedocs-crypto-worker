@@ -7,7 +7,7 @@ logger = structlog.get_logger().bind(logger=__name__)
 
 
 class _HealthHandler(BaseHTTPRequestHandler):
-    def do_GET(self) -> None:  # noqa: N802 (http.server API)
+    def do_GET(self) -> None:
         if self.path == "/health":
             self.send_response(200)
             self.send_header("Content-Type", "text/plain")

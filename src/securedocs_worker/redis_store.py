@@ -1,3 +1,4 @@
+from typing import cast
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -16,7 +17,9 @@ class RedisPayloadStore:
 
     def fetch(self, document_id: UUID) -> SubmissionPayload | None:
         key = self._key_for(document_id)
-        raw = self._client.get(key)
+        # redis-py types .get() as Awaitable | Any (it unions the sync/async
+        # client); this is the sync client, so the result is str | bytes | None.
+        raw = cast(str | bytes | None, self._client.get(key))
         if raw is None:
             return None
         return SubmissionPayload.model_validate_json(raw)

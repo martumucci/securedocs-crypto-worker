@@ -54,9 +54,7 @@ def test_compute_hash_differs_for_different_inputs() -> None:
 
 def test_compute_hash_matches_known_vector() -> None:
     # SHA-256("abc") — NIST FIPS 180-4 test vector
-    expected = bytes.fromhex(
-        "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
-    )
+    expected = bytes.fromhex("ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
     assert compute_hash(b"abc") == expected
 
 

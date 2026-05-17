@@ -1,6 +1,6 @@
 import json
 from base64 import b64encode
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import UUID
 
 import pytest
@@ -29,7 +29,7 @@ class TestDocumentSubmittedEvent:
 
         assert event.message_id == UUID("11111111-1111-1111-1111-111111111111")
         assert event.document_id == UUID("22222222-2222-2222-2222-222222222222")
-        assert event.submitted_at == datetime(2026, 5, 14, 12, 34, 56, 789000, tzinfo=timezone.utc)
+        assert event.submitted_at == datetime(2026, 5, 14, 12, 34, 56, 789000, tzinfo=UTC)
 
     def test_parses_from_raw_json(self) -> None:
         raw = json.dumps(
@@ -76,7 +76,7 @@ class TestDocumentProcessedEvent:
             "tag": _b64(b"\x05" * 16),
             "salt": _b64(b"\x06" * 16),
             "kdfAlgorithm": "scrypt",
-            "kdfParameters": "{\"n\":16384,\"r\":8,\"p\":1}",
+            "kdfParameters": '{"n":16384,"r":8,"p":1}',
             "hash": _b64(b"\x07" * 32),
             "signature": _b64(b"\x08" * 64),
             "algorithm": "AES-256-GCM",
@@ -123,11 +123,11 @@ class TestDocumentProcessedEvent:
             tag=b"\x05" * 16,
             salt=b"\x06" * 16,
             kdf_algorithm="scrypt",
-            kdf_parameters="{\"n\":16384,\"r\":8,\"p\":1}",
+            kdf_parameters='{"n":16384,"r":8,"p":1}',
             hash=b"\x07" * 32,
             signature=b"\x08" * 64,
             algorithm="AES-256-GCM",
-            processed_at=datetime(2026, 5, 14, 12, 34, 56, tzinfo=timezone.utc),
+            processed_at=datetime(2026, 5, 14, 12, 34, 56, tzinfo=UTC),
         )
 
         wire = event.model_dump(by_alias=True, mode="json")

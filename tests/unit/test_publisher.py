@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 from uuid import UUID
 
@@ -25,7 +25,7 @@ def _success_event() -> DocumentProcessedEvent:
         hash=b"\x07" * 32,
         signature=b"\x08" * 64,
         algorithm="AES-256-GCM",
-        processed_at=datetime(2026, 5, 15, 12, 0, 0, tzinfo=timezone.utc),
+        processed_at=datetime(2026, 5, 15, 12, 0, 0, tzinfo=UTC),
     )
 
 
@@ -79,7 +79,7 @@ def test_envelope_round_trips_failed_event() -> None:
         document_id=UUID("22222222-2222-2222-2222-222222222222"),
         status=DocumentStatus.Failed,
         error_reason="payload not available",
-        processed_at=datetime(2026, 5, 15, 12, 0, 0, tzinfo=timezone.utc),
+        processed_at=datetime(2026, 5, 15, 12, 0, 0, tzinfo=UTC),
     )
 
     envelope = build_envelope(failed, EXCHANGE, correlation_id=None)
