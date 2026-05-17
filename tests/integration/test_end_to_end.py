@@ -1,3 +1,4 @@
+import base64
 import json
 import threading
 import time
@@ -29,7 +30,7 @@ PROCESSED_EXCHANGE = (
 )
 CAPTURE_QUEUE = "test.capture.processed"
 
-PLAINTEXT = "end to end legal document"
+PLAINTEXT = b"end to end legal document"
 PASSPHRASE = "correct horse battery staple"
 TEST_SCRYPT = crypto.ScryptParameters(n=1024, r=8, p=1)
 
@@ -92,7 +93,12 @@ def test_submitted_document_is_encrypted_signed_and_published(
     # Seed Redis exactly as the API would.
     redis_client.set(
         f"payload:{document_id}",
-        json.dumps({"payload": PLAINTEXT, "passphrase": PASSPHRASE}),
+        json.dumps(
+            {
+                "payload": base64.b64encode(PLAINTEXT).decode("ascii"),
+                "passphrase": PASSPHRASE,
+            }
+        ),
     )
 
     # Publish the trigger; the durable bound queue retains it until the consumer connects.
@@ -148,7 +154,7 @@ def test_submitted_document_is_encrypted_signed_and_published(
     assert event.document_id == document_id
 
     # Hash is SHA-256 of the original plaintext.
-    assert event.hash == crypto.compute_hash(PLAINTEXT.encode("utf-8"))
+    assert event.hash == crypto.compute_hash(PLAINTEXT)
 
     # Signature verifies against the worker's public key.
     signed = event.hash + canonical_timestamp(event.processed_at).encode("utf-8")
@@ -158,7 +164,7 @@ def test_submitted_document_is_encrypted_signed_and_published(
     key = crypto.derive_key(PASSPHRASE, event.salt, TEST_SCRYPT)
     decryptor = Cipher(algorithms.AES(key), modes.GCM(event.nonce, event.tag)).decryptor()
     recovered = decryptor.update(event.ciphertext) + decryptor.finalize()
-    assert recovered.decode("utf-8") == PLAINTEXT
+    assert recovered == PLAINTEXT
 
     # Worker deleted the Redis key after processing.
     assert redis_client.get(f"payload:{document_id}") is None

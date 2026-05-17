@@ -13,7 +13,7 @@ from securedocs_worker.redis_store import RedisPayloadStore, SubmissionPayload
 
 DOCUMENT_ID = UUID("22222222-2222-2222-2222-222222222222")
 PASSPHRASE = "correct horse battery staple"
-PLAINTEXT = "sensitive legal document content"
+PLAINTEXT = b"sensitive legal document content"
 
 # Low scrypt cost so tests stay fast.
 TEST_SCRYPT = crypto.ScryptParameters(n=1024, r=8, p=1)
@@ -78,7 +78,7 @@ class TestProcessSuccess:
         processor.process(_submitted_event())
 
         event = publisher.publish.call_args[0][0]
-        assert event.hash == crypto.compute_hash(PLAINTEXT.encode("utf-8"))
+        assert event.hash == crypto.compute_hash(PLAINTEXT)
 
     def test_signature_verifies_against_public_key(self) -> None:
         processor, redis, publisher, signing_key = _make_processor()
@@ -102,7 +102,7 @@ class TestProcessSuccess:
         decryptor = Cipher(algorithms.AES(key), modes.GCM(event.nonce, event.tag)).decryptor()
         recovered = decryptor.update(event.ciphertext) + decryptor.finalize()
 
-        assert recovered.decode("utf-8") == PLAINTEXT
+        assert recovered == PLAINTEXT
 
     def test_kdf_metadata_reflects_scrypt_params(self) -> None:
         processor, redis, publisher, _ = _make_processor()

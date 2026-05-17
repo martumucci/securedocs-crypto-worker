@@ -16,14 +16,15 @@ def _make_store(prefix: str = "payload:") -> tuple[RedisPayloadStore, Mock]:
     return store, client
 
 
-def test_fetch_returns_parsed_submission_when_key_exists() -> None:
+def test_fetch_decodes_base64_payload_when_key_exists() -> None:
     store, client = _make_store()
-    client.get.return_value = b'{"payload":"hello","passphrase":"correct horse battery staple"}'
+    # "aGVsbG8=" is base64 of b"hello" (System.Text.Json byte[] convention)
+    client.get.return_value = b'{"payload":"aGVsbG8=","passphrase":"correct horse battery staple"}'
 
     result = store.fetch(DOCUMENT_ID)
 
     assert result == SubmissionPayload(
-        payload="hello",
+        payload=b"hello",
         passphrase="correct horse battery staple",
     )
 
@@ -39,7 +40,7 @@ def test_fetch_returns_none_when_key_missing() -> None:
 
 def test_fetch_uses_configured_prefix() -> None:
     store, client = _make_store(prefix="custom-prefix:")
-    client.get.return_value = b'{"payload":"x","passphrase":"yyyyyyyyyyyyy"}'
+    client.get.return_value = b'{"payload":"eA==","passphrase":"yyyyyyyyyyyyy"}'
 
     store.fetch(DOCUMENT_ID)
 
@@ -48,12 +49,20 @@ def test_fetch_uses_configured_prefix() -> None:
 
 def test_fetch_accepts_str_input_when_decode_responses_enabled() -> None:
     store, client = _make_store()
-    client.get.return_value = '{"payload":"hello","passphrase":"correct horse battery staple"}'
+    client.get.return_value = '{"payload":"aGVsbG8=","passphrase":"correct horse battery staple"}'
 
     result = store.fetch(DOCUMENT_ID)
 
     assert result is not None
-    assert result.payload == "hello"
+    assert result.payload == b"hello"
+
+
+def test_fetch_raises_on_invalid_base64_payload() -> None:
+    store, client = _make_store()
+    client.get.return_value = b'{"payload":"not valid base64!!","passphrase":"yyyyyyyyyyyyy"}'
+
+    with pytest.raises(ValidationError):
+        store.fetch(DOCUMENT_ID)
 
 
 def test_fetch_raises_on_malformed_json() -> None:
@@ -66,7 +75,7 @@ def test_fetch_raises_on_malformed_json() -> None:
 
 def test_fetch_raises_when_required_field_missing() -> None:
     store, client = _make_store()
-    client.get.return_value = b'{"payload":"hello"}'
+    client.get.return_value = b'{"payload":"aGVsbG8="}'
 
     with pytest.raises(ValidationError):
         store.fetch(DOCUMENT_ID)
