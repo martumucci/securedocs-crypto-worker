@@ -8,6 +8,7 @@ This repository is the worker: the process that performs the cryptographic opera
 
 ## Table of contents
 
+- [Related repositories](#related-repositories)
 - [What this service does](#what-this-service-does)
 - [Tech stack](#tech-stack)
 - [Running locally](#running-locally)
@@ -17,6 +18,13 @@ This repository is the worker: the process that performs the cryptographic opera
 - [Processing flow](#processing-flow)
 - [Design decisions](#design-decisions)
 - [Testing](#testing)
+
+---
+
+## Related repositories
+
+- [securedocs-api](https://github.com/martumucci/securedocs-api) — the HTTP API that accepts submissions and persists the proof.
+- [securedocs-deploy](https://github.com/martumucci/securedocs-deploy) — full-system orchestration and end-to-end smoke test.
 
 ---
 
