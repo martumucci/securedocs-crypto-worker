@@ -4,9 +4,13 @@ from uuid import UUID
 from pydantic import BaseModel
 from redis import Redis
 
+from securedocs_worker.events import WireBytes
+
 
 class SubmissionPayload(BaseModel):
-    payload: str
+    # The API serializes the document bytes as a base64 string (System.Text.Json
+    # byte[] convention); WireBytes decodes it back to the raw file bytes.
+    payload: WireBytes
     passphrase: str
 
 

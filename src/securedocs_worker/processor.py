@@ -74,7 +74,7 @@ class DocumentProcessor:
         document_id: UUID,
         submission: SubmissionPayload,
     ) -> DocumentProcessedEvent:
-        plaintext = submission.payload.encode("utf-8")
+        plaintext = submission.payload
 
         salt = crypto.generate_salt()
         nonce = crypto.generate_nonce()
