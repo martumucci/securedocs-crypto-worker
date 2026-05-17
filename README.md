@@ -1,5 +1,9 @@
 # securedocs-crypto-worker
 
+![CI](https://github.com/martumucci/securedocs-crypto-worker/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![License](https://img.shields.io/badge/license-MIT-blue)
+
 SecureDocs is a distributed evidence vault: users submit documents and the system returns a cryptographic proof (hash + Ed25519 signature over the hash and processing timestamp) that anyone holding the public key can verify independently, without trusting the service. The pattern fits use cases like legal document timestamping, regulatory evidence archival, or proof-of-submission systems.
 
 This repository is the worker: the process that performs the cryptographic operations for server-side submissions.
